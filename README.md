@@ -11,6 +11,7 @@ Right now, the MVP is not perfect. Here's how you get started:
 # 1. Go to desired template and click on appscript and copy   paste appscript.js into the code
 ![alt text](/readme-images/image.png)
 
+At <> there is the code editor
 ![alt text](/readme-images/image-1.png)
 
 # 2. Add slides api under services
