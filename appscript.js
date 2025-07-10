@@ -26,10 +26,6 @@ function extractPresentationId(url) {
 function startGenerationProcess() {
   const ui = SlidesApp.getUi();
   
-  // const exampleUrl = ''//exampleUrlResponse.getResponseText();
-  // const examplePresentationId = extractPresentationId(exampleUrl);
-
-  
   // 1. prompt the user for the core information to generate the presentation.
   const promptResponse = ui.prompt(
     'Step 2: Describe Your Content',
@@ -91,7 +87,7 @@ function startGenerationProcess() {
 
 
     // 6. Create prompt for gemini
-    const geminiPrompt = `
+    const old_geminiPrompt = `
       Given a json representation of a presentation from google slides api, create a batch update 
       json body request to update the presentation given the following information:
       USER PROMPT (The specific information to use):
@@ -104,9 +100,39 @@ function startGenerationProcess() {
             Do it as best as you can. Generate ONLY the JSON array for the 'requests' 
             field of the presentations.batchUpdate API call.
             Do NOT include any surrounding text, explanations, or markdown code blocks. 
-            This should be a json object that is an array of "requests": Here is the an array of all the text in the slides:
+            This should be a json object that is an array of "requests".
+            Replace the date in the presentation as ${Utilities.formatDate(new Date(), "GMT+1", "MM/yyyy")}.  
+            Here is the an array of all the text in the slides:
             ${textToReplace}
     `;
+
+    const geminiPrompt = `
+      You are a robot assisting a solution architect in getting a jump start on a new high level design google slides presentation from their 
+      details and a template google slide presentation, in addition to high level design slide documents in the same product area.
+      "${promptText}"
+      Your task is to read the text of the json and generate a batchUpdate json from google slides API to replace each string shown in the array with
+      relevant information. 
+      The batchupdate json contains a replaceAllText field. Given this template's text, 
+      replace ALL text with relevant information through batchupdate. Additionally, add a new slide regarding the specific technology/technique to be implemented. 
+      Generate ONLY the JSON array for the 'requests' field of the presentations.batchUpdate API call.
+      The JSON must be syntactically perfect and strictly adhere to the Google Slides API's request formats.
+
+      For existing slides, use replaceAllText requests to update the content.
+
+     
+      Do NOT include any surrounding text, explanations, or markdown code blocks.
+      Replace the date in the presentation as ${Utilities.formatDate(new Date(), "GMT+1", "MM/yyyy")}. 
+      This should be a valid json that is an array of "requests": Here is the an array of all the text in the slides:
+      ${textToReplace}
+    `;
+
+//  For creating a new slide:
+//       1.  Use a createSlide request with a unique objectId (e.g., "newSlideXYZ") and specify slideLayoutReference as "TITLE_AND_BODY".
+//       2.  Immediately following the createSlide request, add two insertText requests.
+//           * The first insertText request should populate the *title* of the new slide. Assign a unique objectId for this text box (e.g., "newSlideXYZ_title").
+//           * The second insertText request should populate the *body* of the new slide. Assign a unique objectId for this text box (e.g., "newSlideXYZ_body").
+//           Ensure these insertText requests correctly reference the objectId assigned to the *text box* within the newly created slide, not the slide's own objectId for the insertText's objectId field.
+
 
     // 7. call the Gemini API.
     Logger.log('Calling Gemini API...');
@@ -128,6 +154,9 @@ function startGenerationProcess() {
     const batchUpdateJsonString = geminiResult.candidates[0].content.parts[0].text;
     const cleanedJsonString = batchUpdateJsonString.replace(/```json/g, '').replace(/```/g, '').trim();
     const batchUpdateRequest = { requests: JSON.parse(cleanedJsonString) };
+
+    // 8.5 Debug to batchUpdate generate file
+    DriveApp.createFile(`New Json ${Utilities.formatDate(new Date(), "America/Chicago", "HH:mm:ss")}`, batchUpdateRequest);
 
     // 9. send request to slides api
     Logger.log('Applying updates to the new presentation...');
