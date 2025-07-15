@@ -29,3 +29,8 @@ Before:
 
 After:
 ![alt text](/readme-images/image-7.png)
+
+------------------------------------------
+
+# Here is the architecture diagram for this application:
+![architecture diagram](architecture-diagram.png)
